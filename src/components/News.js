@@ -1,11 +1,15 @@
-/* eslint-disable react/jsx-no-undef */
 import React, { useEffect, useState, useCallback } from "react";
 import Newsitem from "./Newsitem";
 import Spinner from "./Spinner";
 import PropTypes from "prop-types";
 import InfiniteScroll from "react-infinite-scroll-component";
 
-const News = (props) => {
+const News = ({
+  country,
+  pageSize,
+  category,
+  setProgress,
+}) => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -16,23 +20,17 @@ const News = (props) => {
   };
 
   const updateNews = useCallback(async () => {
-    props.setProgress(10);
+    setProgress(10);
 
-    let url = `https://newsapi.org/v2/top-headlines?country=${
-      props.country
-    }&category=${
-      props.category
-    }&apiKey=a27af9e9abda4ed5bf134e4262496f81&page=${
-      page
-    }&pageSize=${props.pageSize}`;
+    let url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=a27af9e9abda4ed5bf134e4262496f81&page=${page}&pageSize=${pageSize}`;
 
     setLoading(true);
-    props.setProgress(30);
+    setProgress(30);
 
     let data = await fetch(url);
     let parsedData = await data.json();
 
-    props.setProgress(70);
+    setProgress(70);
 
     if (parsedData.articles) {
       setArticles(parsedData.articles);
@@ -40,30 +38,18 @@ const News = (props) => {
     }
 
     setLoading(false);
-    props.setProgress(100);
-  }, [
-    props.country,
-    props.category,
-    props.pageSize,
-    props.setProgress,
-    page,
-  ]);
+    setProgress(100);
+  }, [country, category, pageSize, setProgress, page]);
 
   useEffect(() => {
-    document.title = `${capitalizeFirst(props.category)} - bonNews`;
+    document.title = `${capitalizeFirst(category)} - bonNews`;
     updateNews();
-  }, [props.category, updateNews]);
+  }, [category, updateNews]);
 
   const fetchMoreData = async () => {
     const nextPage = page + 1;
 
-    let url = `https://newsapi.org/v2/top-headlines?country=${
-      props.country
-    }&category=${
-      props.category
-    }&apiKey=a27af9e9abda4ed5bf134e4262496f81&page=${
-      nextPage
-    }&pageSize=${props.pageSize}`;
+    let url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=a27af9e9abda4ed5bf134e4262496f81&page=${nextPage}&pageSize=${pageSize}`;
 
     setPage(nextPage);
 
@@ -84,7 +70,7 @@ const News = (props) => {
           className="text-center"
           style={{ margin: "35px 0px", marginTop: "70px" }}
         >
-          bonNews - Top {capitalizeFirst(props.category)} Headlines
+          bonNews - Top {capitalizeFirst(category)} Headlines
         </h2>
 
         {loading && <Spinner />}
