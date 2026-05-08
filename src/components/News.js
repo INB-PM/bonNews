@@ -90,6 +90,7 @@ News.propTypes = {
   country: PropTypes.string,
   pageSize: PropTypes.number,
   category: PropTypes.string,
+  setProgress: PropTypes.func,
 };
 
 export default News;
