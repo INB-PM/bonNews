@@ -1,67 +1,54 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import Newsitem from "./Newsitem";
 import Spinner from "./Spinner";
 import PropTypes from "prop-types";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 const News = ({
-  country,
-  pageSize,
-  category,
+  country = "in",
+  pageSize = 8,
+  category = "general",
   setProgress,
 }) => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalResults, setTotalResults] = useState(0);
 
   const capitalizeFirst = (string) => {
     return string.charAt(0).toUpperCase() + string.slice(1);
   };
 
-  const updateNews = useCallback(async () => {
-    setProgress(10);
+  const updateNews = async () => {
+    try {
+      setProgress(10);
 
-    let url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=a27af9e9abda4ed5bf134e4262496f81&page=${page}&pageSize=${pageSize}`;
+      const url = `https://gnews.io/api/v4/top-headlines?category=${category}&lang=en&country=${country}&max=${pageSize}&apikey=${process.env.REACT_APP_GNEWS_API}`;
+      setLoading(true);
 
-    setLoading(true);
-    setProgress(30);
+      setProgress(30);
 
-    let data = await fetch(url);
-    let parsedData = await data.json();
+      const response = await fetch(url);
+      const parsedData = await response.json();
 
-    setProgress(70);
+      console.log(parsedData);
 
-    if (parsedData.articles) {
-      setArticles(parsedData.articles);
-      setTotalResults(parsedData.totalResults);
+      setProgress(70);
+
+      setArticles(parsedData.articles || []);
+
+      setLoading(false);
+
+      setProgress(100);
+    } catch (error) {
+      console.log(error);
     }
-
-    setLoading(false);
-    setProgress(100);
-  }, [country, category, pageSize, setProgress, page]);
+  };
 
   useEffect(() => {
     document.title = `${capitalizeFirst(category)} - bonNews`;
     updateNews();
-  }, [category, updateNews]);
 
-  const fetchMoreData = async () => {
-    const nextPage = page + 1;
-
-    let url = `https://newsapi.org/v2/top-headlines?country=${country}&category=${category}&apiKey=a27af9e9abda4ed5bf134e4262496f81&page=${nextPage}&pageSize=${pageSize}`;
-
-    setPage(nextPage);
-
-    let data = await fetch(url);
-    let parsedData = await data.json();
-
-    setArticles((prevArticles) =>
-      prevArticles.concat(parsedData.articles)
-    );
-
-    setTotalResults(parsedData.totalResults);
-  };
+    // eslint-disable-next-line
+  }, []);
 
   return (
     <>
@@ -75,43 +62,28 @@ const News = ({
 
         {loading && <Spinner />}
 
-        <InfiniteScroll
-          dataLength={articles.length}
-          next={fetchMoreData}
-          hasMore={articles.length !== totalResults}
-          loader={<Spinner />}
-        >
-          <div className="container">
-            <div className="row">
-              {articles.map((element) => {
-                return (
-                  <div className="col-md-4" key={element.url}>
-                    <Newsitem
-                      title={element.title ? element.title : ""}
-                      description={
-                        element.description ? element.description : ""
-                      }
-                      imgUrl={element.urlToImage}
-                      newsUrl={element.url}
-                      author={element.author}
-                      date={element.publishedAt}
-                      source={element.source.name}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+        <div className="container">
+          <div className="row">
+            {articles.map((element, index) => {
+              return (
+                <div className="col-md-4" key={index}>
+                  <Newsitem
+                    title={element.title || ""}
+                    description={element.description || ""}
+                    imgUrl={element.image}
+                    newsUrl={element.url}
+                    author={element.source?.name}
+                    date={element.publishedAt}
+                    source={element.source?.name}
+                  />
+                </div>
+              );
+            })}
           </div>
-        </InfiniteScroll>
+        </div>
       </div>
     </>
   );
-};
-
-News.defaultProps = {
-  country: "us",
-  pageSize: 8,
-  category: "general",
 };
 
 News.propTypes = {
